@@ -4,12 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.johanbriger.aiservice.model.dto.LlmMessage;
 import com.johanbriger.aiservice.model.dto.LlmRequest;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.util.retry.Retry;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,82 +17,93 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class ChatService {
 
-    @Value("${ai.api.key}")
-    private String apiKey;
-
-    private final WebClient webClient;
+    private final RestClient restClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
-
     private final Map<String, List<LlmMessage>> chatHistory = new ConcurrentHashMap<>();
 
-    public ChatService(WebClient webClient) {
-        this.webClient = webClient;
+    public ChatService(RestClient restClient) {
+        this.restClient = restClient;
     }
 
     public String getSystemPrompt(String personality) {
+        String baseInstructions = " Svara alltid på svenska.";
+
+        // Logga här för att se vad Java faktiskt tar emot från React:
+        System.out.println("DEBUG: Mottagen personlighet i Java: " + personality);
+
         return switch (personality.toLowerCase()) {
-            case "pirate" -> "Du är en barsk pirat. Svara alltid med pirat-slang och avsluta med 'Arrr!'";
-            case "coder" -> "Du är en hjälpsam senior java-utvecklare. Ge korta, koncisa kodexempel.";
-            default -> "Du är en hjälpsam assistent.";
+            // Ändra "helper" här så den matchar React-ID:t
+            case "helper" ->
+                    "Du är FunnyAI:s standard-assistent. Du är hjälpsam men älskar usla ordvitsar." + baseInstructions;
+
+            case "sarcastic" ->
+                    "Du är Sarkastiske Simon. Du svarar med ironi." + baseInstructions;
+
+            case "chaos" ->
+                    "Du är Kaos-Boten. Du är hyperaktiv och absurd." + baseInstructions;
+
+            default -> {
+                System.out.println("DEBUG: Hamnade i default! Använder pappa-humor.");
+                yield "Du är FunnyAI:s standard-assistent med pappa-humor." + baseInstructions;
+            }
         };
     }
 
     public String processChat(String personality, String message, String sessionId) {
-        // 1. Hantera sessionId (skapa ett standard-id om inget skickas med)
         String id = (sessionId == null || sessionId.isEmpty()) ? "default-session" : sessionId;
-
-        // 2. Hämta tidigare historik eller skapa en ny lista om det är en ny session
         List<LlmMessage> history = chatHistory.computeIfAbsent(id, k -> new ArrayList<>());
 
-        // 3. Om sessionen är helt ny (listan är tom), börja med System Prompt
-        if (history.isEmpty()) {
+        // 1. Kontrollera om vi redan har en system-prompt i början
+        if (!history.isEmpty() && history.get(0).role().equals("system")) {
+            // Uppdatera befintlig system-prompt till den nya personligheten
+            history.set(0, new LlmMessage("system", getSystemPrompt(personality)));
+        } else if (history.isEmpty()) {
+            // Om listan är tom, lägg till den för första gången
             history.add(new LlmMessage("system", getSystemPrompt(personality)));
+        } else {
+            // Om listan inte är tom men saknar system-prompt (ovanligt), lägg till den längst fram
+            history.add(0, new LlmMessage("system", getSystemPrompt(personality)));
         }
 
-        // 4. Lägg till användarens nya meddelande i historiken
         history.add(new LlmMessage("user", message));
+        LlmRequest llmRequest = new LlmRequest("openai/gpt-oss-120b:free", history);
 
-        // 5. Skapa requesten med HELA historiken
-        LlmRequest llmRequest = new LlmRequest("openrouter/auto", history);
+        // Resiliens-logik (Retry) för RestClient
+        int maxAttempts = 3;
+        int attempt = 0;
+        Exception lastException = null;
 
-        try {
-            String responseJson = webClient.post()
-                    .uri("/api/v1/chat/completions")
-                    .header("Authorization", "Bearer " + apiKey.trim())
-                    .header("Content-Type", "application/json")
-                    .header("HTTP-Referer", "http://localhost:8080")
-                    .bodyValue(llmRequest)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .retryWhen(Retry.backoff(3, Duration.ofSeconds(2))
-                    .filter(this::isRetryableException)
-                                    .doAfterRetry(retrySignal ->
-                                            System.out.println("Försök misslyckades. Försök igen " + (retrySignal.totalRetries() + 1)))
-                    )
-                    .block();
+        while (attempt < maxAttempts) {
+            try {
+                // 4. Anrop med RestClient (Betydligt renare!)
+                String responseJson = restClient.post()
+                        .uri("/chat/completions")
+                        .body(llmRequest)
+                        .retrieve()
+                        .onStatus(HttpStatusCode::isError, (req, res) -> {
+                            throw new RestClientResponseException("API misslyckades", res.getStatusCode(), res.getStatusText(), null, null, null);
+                        })
+                        .body(String.class);
 
-            String trimmedResponse = (responseJson != null) ? responseJson.trim() : "";
+                System.out.println("Svar från OpenRouter: " + responseJson);
 
-            if (trimmedResponse.startsWith("{")) {
-                JsonNode root = objectMapper.readTree(trimmedResponse);
+                JsonNode root = objectMapper.readTree(responseJson);
                 String aiAnswer = root.path("choices").get(0).path("message").path("content").asText();
 
-                // 6. SPARA AI:ns svar i historiken så den minns det till nästa gång!
                 history.add(new LlmMessage("assistant", aiAnswer));
-
                 return aiAnswer;
+
+            } catch (Exception e) {
+                attempt++;
+                lastException = e;
+                if (attempt < maxAttempts) {
+                    long sleepTime = (long) Math.pow(2, attempt) * 1000; // Exponential Backoff (2s, 4s...)
+                    System.out.println("Försök " + attempt + " misslyckades. Testar igen om " + sleepTime + "ms...");
+                    try { Thread.sleep(sleepTime); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                }
             }
-            return "Oväntat format: " + trimmedResponse;
-
-        } catch (Exception e) {
-            throw new RuntimeException("AI-tjänsten svarar inte efter flera försök: " + e.getMessage());
         }
-    }
 
-    // Hjälpmetod
-    private boolean isRetryableException(Throwable error) {
-
-        return error instanceof org.springframework.web.reactive.function.client.WebClientResponseException e &&
-                (e.getStatusCode().is5xxServerError() || e.getStatusCode().value() == 429);
+        throw new RuntimeException("AI-tjänsten svarar inte efter " + maxAttempts + " försök. Senaste fel: " + lastException.getMessage());
     }
 }

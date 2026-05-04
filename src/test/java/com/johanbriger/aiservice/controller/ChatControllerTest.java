@@ -1,6 +1,5 @@
 package com.johanbriger.aiservice.controller;
 
-import com.johanbriger.aiservice.controller.ChatController;
 import com.johanbriger.aiservice.service.ChatService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
