@@ -1,39 +1,42 @@
-HELP.md
+# --- Generella inställningar ---
+.env
+.env.local
+.env.*
+node_modules/
+dist/
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+build/
+.DS_Store
 
-### STS ###
-.apt_generated
+# --- Backend (Java/Maven) ---
+backend/target/
+backend/.mvn/
+backend/.env
+backend/HELP.md
+backend/mvnw
+backend/mvnw.cmd
+
+# --- Frontend (React/Vite) ---
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# --- IDE ---
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.settings/
 .classpath
-.factorypath
 .project
-.settings
+bin/
+
+# --- Spring Boot/Maven-filer ---
+.apt_generated
+.factorypath
 .springBeans
 .sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-
-# AI API Keys and secrets
-.env
-
 
 
