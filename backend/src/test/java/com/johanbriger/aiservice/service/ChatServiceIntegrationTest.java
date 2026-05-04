@@ -40,6 +40,7 @@ public class ChatServiceIntegrationTest {
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("AI_BASE_URL", wireMockServer::baseUrl);
         registry.add("AI_API_KEY", () -> "test-key");
+        registry.add("OPENROUTER_API_KEY", () -> "test-key");
     }
 
     // 3. LOGISK FIX: Skapa en test-klient som bara lever i detta test
