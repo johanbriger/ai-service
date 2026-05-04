@@ -6,55 +6,76 @@
     --text-light: #f1f5f9;
     --text-muted: #94a3b8;
     --border-blue: #334155;
+    --shadow-main: rgba(0, 0, 0, 0.4);
 }
 
 body {
     margin: 0;
+    padding: 0;
     font-family: 'Inter', -apple-system, sans-serif;
     background-color: var(--bg-dark-navy);
     color: var(--text-light);
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
 }
 
 .chat-container {
     position: relative;
     display: flex;
     flex-direction: column;
-    /* FIXAD STORLEK */
-    height: 700px;
-    width: 800px;
-    min-width: 800px;
-    flex-shrink: 0;
+    height: 80vh;
+    max-height: 700px;
+    min-height: 450px;
+    width: 850px;
     max-width: 95vw;
     background-color: var(--chat-card-bg);
     border-radius: 24px;
     border: 1px solid var(--border-blue);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 20px 50px var(--shadow-main);
     overflow: hidden;
+    z-index: 5;
+    margin: 0;
 }
 
-.session-id-discrete {
+.footer-github {
     position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    opacity: 0.5;
-    font-family: monospace;
-    z-index: 10;
-}
-
-header {
-    padding: 1.5rem;
-    background-color: var(--chat-card-bg);
-    border-bottom: 1px solid var(--border-blue);
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    flex-shrink: 0; /* Hindrar headern från att tryckas ihop */
+    gap: 4px;
+    text-decoration: none;
+    color: var(--text-muted);
+    opacity: 0.6;
+    transition: all 0.3s ease;
+    z-index: 1;
+}
+
+.footer-github span {
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    font-family: monospace;
+    text-transform: uppercase;
+}
+
+.footer-github:hover {
+    opacity: 1;
+    color: var(--primary-blue);
+    transform: translateX(-50%) translateY(-3px);
+}
+
+header {
+    padding: 1.2rem;
+    background-color: var(--chat-card-bg);
+    border-bottom: 1px solid var(--border-blue);
+    flex-shrink: 0;
 }
 
 .header-top h1 {
@@ -62,6 +83,7 @@ header {
     color: var(--primary-blue);
     margin: 0;
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 10px;
 }
@@ -83,7 +105,7 @@ header {
     border: 1px solid var(--border-blue);
     background: rgba(255, 255, 255, 0.03);
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
     transition: all 0.2s;
 }
@@ -94,7 +116,6 @@ header {
     border-color: var(--primary-blue);
 }
 
-/* MESSAGE LIST MED DOLD SCROLL */
 .message-list {
     flex: 1;
     overflow-y: auto;
@@ -104,14 +125,11 @@ header {
     gap: 1.2rem;
     background-image: radial-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px);
     background-size: 20px 20px;
-
-    /* Döljer scrollbar i Chrome/Safari */
-    &::-webkit-scrollbar {
-        display: none;
-    }
-    /* Döljer scrollbar i Firefox/IE */
     scrollbar-width: none;
-    -ms-overflow-style: none;
+}
+
+.message-list::-webkit-scrollbar {
+    display: none;
 }
 
 .message {
@@ -126,10 +144,7 @@ header {
     to { opacity: 1; transform: translateY(0); }
 }
 
-.message.user {
-    align-self: flex-end;
-    flex-direction: row-reverse;
-}
+.message.user { align-self: flex-end; flex-direction: row-reverse; }
 
 .avatar {
     width: 32px;
@@ -143,25 +158,17 @@ header {
     flex-shrink: 0;
 }
 
-.message.user .avatar {
-    background: var(--primary-blue);
-    color: white;
-}
+.message.user .avatar { background: var(--primary-blue); color: white; }
 
 .bubble {
-    padding: 10px 14px;
+    padding: 12px 16px;
     border-radius: 18px;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    /* FIX: Bryt långa ord och bevara radbrytningar */
+    font-size: 0.95rem;
+    line-height: 1.5;
     word-wrap: break-word;
-    overflow-wrap: break-word;
 }
 
-.bubble p {
-    margin: 0;
-    white-space: pre-wrap;
-}
+.bubble p { margin: 0; white-space: pre-wrap; }
 
 .message.assistant .bubble {
     background: var(--ai-bubble-bg);
@@ -179,14 +186,13 @@ header {
     padding: 1.2rem;
     background-color: var(--chat-card-bg);
     border-top: 1px solid var(--border-blue);
-    flex-shrink: 0;
 }
 
 form {
     display: flex;
     gap: 10px;
     background: var(--bg-dark-navy);
-    padding: 6px 10px;
+    padding: 8px 14px;
     border-radius: 25px;
     border: 1px solid var(--border-blue);
     align-items: center;
@@ -196,10 +202,9 @@ input {
     flex: 1;
     border: none;
     background: transparent;
-    padding: 8px;
+    color: white;
     outline: none;
-    color: var(--text-light);
-    font-size: 0.9rem;
+    font-size: 16px;
 }
 
 button[type="submit"] {
@@ -213,16 +218,40 @@ button[type="submit"] {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
 }
 
-/* Loading Animation */
-.loading-bubble { display: flex; gap: 4px; }
-.dot { width: 5px; height: 5px; background: var(--text-muted); border-radius: 50%; animation: bounce 1.4s infinite; }
+.session-id-discrete {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+    font-family: monospace;
+}
+
+@media (max-width: 600px) {
+    .chat-container {
+        height: 100dvh;
+        width: 100vw;
+        max-height: none;
+        margin: 0;
+        border-radius: 0;
+        border: none;
+    }
+
+    .footer-github {
+        display: none;
+    }
+
+    .message { max-width: 90%; }
+}
+
+.loading-bubble { display: flex; gap: 4px; padding: 12px; }
+.dot { width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: bounce 1.4s infinite; }
 .dot:nth-child(2) { animation-delay: 0.2s; }
 .dot:nth-child(3) { animation-delay: 0.4s; }
-
 @keyframes bounce {
     0%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-5px); }
+    40% { transform: translateY(-6px); }
 }

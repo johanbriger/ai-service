@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { v4 as uuidv4 } from 'uuid';
-import { Send, User, Bot, Sparkles, MessageCircle, Zap, Ghost, Laugh } from 'lucide-react';
+import { Send, User, Bot, Sparkles, MessageCircle, Zap, Ghost, Laugh, Code} from 'lucide-react';
+import Markdown from 'react-markdown'
+
 
 function App() {
     const [messages, setMessages] = useState([]);
@@ -69,70 +71,82 @@ function App() {
     };
 
     return (
-        <div className="chat-container">
-            <span className="session-id-discrete">ID: {sessionId.slice(0, 8)}</span>
+        <>
+            <div className="chat-container">
+                <span className="session-id-discrete">ID: {sessionId.slice(0, 8)}</span>
 
-            <header>
-                <div className="header-top">
-                    <h1>FunnyAI <Laugh size={18} className="sparkle-icon" /></h1>
-                </div>
+                <header>
+                    <div className="header-top">
+                        <h1>FunnyAI <Laugh size={18} className="sparkle-icon" /></h1>
+                    </div>
 
-                <div className="personality-selector">
-                    {personalities.map((p) => (
-                        <button
-                            key={p.id}
-                            className={`personality-chip ${personality === p.id ? 'active' : ''}`}
-                            onClick={() => setPersonality(p.id)}
-                        >
-                            {p.icon}
-                            {p.name}
-                        </button>
+                    <div className="personality-selector">
+                        {personalities.map((p) => (
+                            <button
+                                key={p.id}
+                                className={`personality-chip ${personality === p.id ? 'active' : ''}`}
+                                onClick={() => setPersonality(p.id)}
+                            >
+                                {p.icon}
+                                {p.name}
+                            </button>
+                        ))}
+                    </div>
+                </header>
+
+                <div className="message-list">
+                    {/* ... din existerande meddelande-logik ... */}
+                    {messages.length === 0 && (
+                        <div className="empty-state">
+                            <Bot size={48} />
+                            <p>Välkommen! Välj en personlighet ovan och börja chatta på svenska.</p>
+                        </div>
+                    )}
+                    {messages.map((msg, idx) => (
+                        <div key={idx} className={`message ${msg.role}`}>
+                            <div className="avatar">
+                                {msg.role === 'user' ? <User size={18} /> : <Bot size={18} />}
+                            </div>
+                            <div className="bubble">
+                                <Markdown>{msg.content}</Markdown>
+                            </div>
+                        </div>
                     ))}
+                    {loading && (
+                        <div className="message assistant">
+                            <div className="avatar pulsing"><Bot size={18} /></div>
+                            <div className="bubble loading-bubble">
+                                <div className="dot"></div><div className="dot"></div><div className="dot"></div>
+                            </div>
+                        </div>
+                    )}
+                    <div ref={messagesEndRef} />
                 </div>
-            </header>
 
-            <div className="message-list">
-                {messages.length === 0 && (
-                    <div className="empty-state">
-                        <Bot size={48} />
-                        <p>Välkommen! Välj en personlighet ovan och börja chatta på svenska.</p>
-                    </div>
-                )}
-                {messages.map((msg, idx) => (
-                    <div key={idx} className={`message ${msg.role}`}>
-                        <div className="avatar">
-                            {msg.role === 'user' ? <User size={18} /> : <Bot size={18} />}
-                        </div>
-                        <div className="bubble">
-                            <p>{msg.content}</p>
-                        </div>
-                    </div>
-                ))}
-                {loading && (
-                    <div className="message assistant">
-                        <div className="avatar pulsing"><Bot size={18} /></div>
-                        <div className="bubble loading-bubble">
-                            <div className="dot"></div><div className="dot"></div><div className="dot"></div>
-                        </div>
-                    </div>
-                )}
-                {/* Ankare för auto-scroll */}
-                <div ref={messagesEndRef} />
-            </div>
+                <div className="input-area">
+                    <form onSubmit={sendMessage}>
+                        <input
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder={`Prata med din ${personalities.find(p => p.id === personality).name}...`}
+                        />
+                        <button type="submit" disabled={loading || !input.trim()}>
+                            <Send size={20} />
+                        </button>
+                    </form>
+                </div>
+            </div> {/* HÄR STÄNGS CHAT-CONTAINER */}
 
-            <div className="input-area">
-                <form onSubmit={sendMessage}>
-                    <input
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder={`Prata med din ${personalities.find(p => p.id === personality).name}...`}
-                    />
-                    <button type="submit" disabled={loading || !input.trim()}>
-                        <Send size={20} />
-                    </button>
-                </form>
-            </div>
-        </div>
+            <a
+                href="https://github.com/johanbriger/ai-service"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer-github"
+            >
+                <Code size={20} />
+                <span>Github-Repo</span>
+            </a>
+        </>
     );
 }
 
