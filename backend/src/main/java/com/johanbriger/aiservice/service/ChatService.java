@@ -19,7 +19,7 @@ public class ChatService {
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final Map<String, List<LlmMessage>> chatHistory = new ConcurrentHashMap<>();
+    private final Map<String, ChatSession> chatHistory = new ConcurrentHashMap<>();
 
     public ChatService(RestClient restClient) {
         this.restClient = restClient;
@@ -59,7 +59,11 @@ public class ChatService {
 
     public String processChat(String personality, String message, String sessionId) {
         String id = (sessionId == null || sessionId.isEmpty()) ? "default-session" : sessionId;
-        List<LlmMessage> history = chatHistory.computeIfAbsent(id, k -> new ArrayList<>());
+
+        ChatSession session = chatHistory.computeIfAbsent(id, k -> new ChatSession(new ArrayList<>()));
+        session.updateAccessTime();
+
+        List<LlmMessage> history = session.getHistory();
 
         // Kontrollera om vi redan har en system-prompt i början
         if (!history.isEmpty() && history.get(0).role().equals("system")) {
@@ -112,5 +116,28 @@ public class ChatService {
         }
 
         throw new RuntimeException("AI-tjänsten svarar inte efter " + maxAttempts + " försök. Senaste fel: " + lastException.getMessage());
+    }
+
+    private static class ChatSession {
+        private final List<LlmMessage> history;
+        private long lastAccessed;
+
+        public ChatSession(List<LlmMessage> history) {
+            this.history = history;
+            this.lastAccessed = System.currentTimeMillis();
+        }
+
+        public List<LlmMessage> getHistory() {
+            return history;
+        }
+
+        public long getLastAccessed() {
+            return lastAccessed;
+        }
+
+        // Uppdatera tidsstämpeln varje gång ett nytt meddelande skickas
+        public void updateAccessTime() {
+            this.lastAccessed = System.currentTimeMillis();
+        }
     }
 }
