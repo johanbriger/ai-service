@@ -3,6 +3,7 @@ import './App.css';
 import { v4 as uuidv4 } from 'uuid';
 import { Send, User, Bot, Sparkles, MessageCircle, Zap, Ghost, Laugh, Code} from 'lucide-react';
 import Markdown from 'react-markdown'
+import Logo from './components/Logo';
 
 
 function App() {
@@ -77,7 +78,7 @@ function App() {
 
                 <header>
                     <div className="header-top">
-                        <h1>FunnyAI <Laugh size={18} className="sparkle-icon" /></h1>
+                        <Logo />
                     </div>
 
                     <div className="personality-selector">

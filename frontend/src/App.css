@@ -255,3 +255,73 @@ button[type="submit"] {
     0%, 80%, 100% { transform: translateY(0); }
     40% { transform: translateY(-6px); }
 }
+
+/* ==========================================
+   LOGOTYP (FunnyAI Logo & Animationer)
+   ========================================== */
+
+/* Container för logotypen */
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    user-select: none;
+    margin: 0 auto; /* Centrerar loggan i headern */
+}
+
+/* Storleken på vår SVG-smiley */
+.logo-icon {
+    width: 42px;
+    height: 42px;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
+    animation: float 4s ease-in-out infinite; /* Får smileyn att sväva */
+}
+
+/* Den streckade yttre ringen som snurrar långsamt */
+.spinning-ring {
+    transform-origin: center;
+    animation: spin 20s linear infinite;
+}
+
+/* Text-stylingen för "FunnyAI" */
+.logo-text {
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text-light);
+    font-family: 'Inter', sans-serif;
+}
+
+/* Gradienten på "AI"-delen av texten */
+.logo-text-gradient {
+    background: linear-gradient(135deg, #60a5fa 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-left: 2px;
+}
+
+/* --- ANIMATIONER --- */
+
+/* Svävande effekt på robothuvudet */
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+/* Långsam rotation på den streckade ringen */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
