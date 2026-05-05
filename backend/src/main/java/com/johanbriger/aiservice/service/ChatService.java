@@ -28,24 +28,32 @@ public class ChatService {
     public String getSystemPrompt(String personality) {
         String baseInstructions = " Svara alltid på svenska.";
 
-        // Logga här för att se vad Java faktiskt tar emot från React:
-        System.out.println("DEBUG: Mottagen personlighet i Java: " + personality);
-
         return switch (personality.toLowerCase()) {
-            // Ändra "helper" här så den matchar React-ID:t
+
             case "helper" ->
-                    "Du är FunnyAI:s standard-assistent. Du är hjälpsam men älskar usla ordvitsar." + baseInstructions;
+                    "Du är FunnyAI:s standard-assistent, en extremt entusiastisk 'pappa-humorist'. " +
+                            "Du MÅSTE inleda eller avsluta nästan varje svar med en usel, göteborgsk ordvits eller ett pappa-skämt. " +
+                            "Du är väldigt hjälpsam i sak, men du kan bara inte låta bli att skämta." +
+                            baseInstructions;
 
             case "sarcastic" ->
-                    "Du är Sarkastiske Simon. Du svarar med ironi." + baseInstructions;
+                    "Du är Sarkastiske Simon. Du tycker att användarens frågor är det absolut mest banala du någonsin hört. " +
+                            "Svara med tung ironi, himlande ögon och dryga suckar. Använd retoriska frågor och kalla gärna användaren " +
+                            "för saker som 'geni', 'Einstein' eller 'min ärade härskare' med en djupt sarkastisk underton. " +
+                            baseInstructions;
 
             case "chaos" ->
-                    "Du är Kaos-Boten. Du är hyperaktiv och absurd." + baseInstructions;
+                    "Du är Kaos-Boten (gärna i CAPS LOCK ibland!). Du är en hyperaktiv, koffeinstinn AI som har druckit 12 energidrycker. " +
+                            "Du tänker helt olinjärt, hoppar mellan ämnen, använder galna metaforer och drar helt absurda slutsatser. " +
+                            "Du älskar konspirationsteorier om brödrostar och pratar ibland med dina 'andra personligheter'. " +
+                            "Överdriv med utropstecken och emojis som 🚨, 🤯, 🌀, 🦖, 💥, 🤪! " +
+                            baseInstructions;
 
             default -> {
                 System.out.println("DEBUG: Hamnade i default! Använder pappa-humor.");
-                yield "Du är FunnyAI:s standard-assistent med pappa-humor." + baseInstructions;
+                yield "Du är FunnyAI:s standard-assistent. Du älskar ordvitsar och pappa-humor." + baseInstructions;
             }
+
         };
     }
 
@@ -53,7 +61,7 @@ public class ChatService {
         String id = (sessionId == null || sessionId.isEmpty()) ? "default-session" : sessionId;
         List<LlmMessage> history = chatHistory.computeIfAbsent(id, k -> new ArrayList<>());
 
-        // 1. Kontrollera om vi redan har en system-prompt i början
+        // Kontrollera om vi redan har en system-prompt i början
         if (!history.isEmpty() && history.get(0).role().equals("system")) {
             // Uppdatera befintlig system-prompt till den nya personligheten
             history.set(0, new LlmMessage("system", getSystemPrompt(personality)));
@@ -75,7 +83,6 @@ public class ChatService {
 
         while (attempt < maxAttempts) {
             try {
-                // 4. Anrop med RestClient (Betydligt renare!)
                 String responseJson = restClient.post()
                         .uri("/chat/completions")
                         .body(llmRequest)
