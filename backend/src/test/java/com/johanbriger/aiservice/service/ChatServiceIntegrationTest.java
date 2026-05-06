@@ -12,8 +12,11 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.net.http.HttpClient;
@@ -24,9 +27,9 @@ import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
+@EnableRetry // SÄKERSTÄLL: Att Spring Retry är aktivt under våra integrationstester!
 public class ChatServiceIntegrationTest {
 
-    // 1. Starta WireMock på en dynamisk port
     @RegisterExtension
     static WireMockExtension wireMockServer = WireMockExtension.newInstance()
             .options(wireMockConfig().dynamicPort())
@@ -35,7 +38,6 @@ public class ChatServiceIntegrationTest {
     @Autowired
     private ChatService chatService;
 
-    // 2. Mappa porten till din applikations properties
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("AI_BASE_URL", wireMockServer::baseUrl);
@@ -43,11 +45,9 @@ public class ChatServiceIntegrationTest {
         registry.add("OPENROUTER_API_KEY", () -> "test-key");
     }
 
-    // 3. LOGISK FIX: Skapa en test-klient som bara lever i detta test
     @TestConfiguration
     static class TestConfig {
 
-        // Vi hämtar AI_BASE_URL som vi satte i configureProperties ovan
         @Bean
         @Primary
         public RestClient testRestClient(RestClient.Builder builder,
@@ -58,15 +58,39 @@ public class ChatServiceIntegrationTest {
                     .build();
 
             return builder
-                    .baseUrl(wiremockBaseUrl) // KRITISKT: Lägg till schemat (http://localhost:port)
+                    .baseUrl(wiremockBaseUrl)
                     .requestFactory(new JdkClientHttpRequestFactory(httpClient))
+                    // VIKTIGT: Vi måste återskapa felhanteringen här så att test-klienten kastar rätt sorts Exceptions!
+                    .defaultStatusHandler(
+                            statusCode -> statusCode.is4xxClientError(),
+                            (request, response) -> {
+                                throw HttpClientErrorException.create(
+                                        response.getStatusCode(),
+                                        response.getStatusText(),
+                                        response.getHeaders(),
+                                        response.getBody().readAllBytes(),
+                                        null
+                                );
+                            }
+                    )
+                    .defaultStatusHandler(
+                            statusCode -> statusCode.is5xxServerError(),
+                            (request, response) -> {
+                                throw HttpServerErrorException.create(
+                                        response.getStatusCode(),
+                                        response.getStatusText(),
+                                        response.getHeaders(),
+                                        response.getBody().readAllBytes(),
+                                        null
+                                );
+                            }
+                    )
                     .build();
         }
     }
 
     @BeforeEach
     void setup() {
-        // Berätta för stubFor() vilken port den ska prata med
         WireMock.configureFor("localhost", wireMockServer.getPort());
     }
 
@@ -86,22 +110,26 @@ public class ChatServiceIntegrationTest {
     void testRetryLogic() {
         String scenario = "RetryScenario";
 
+        // Första anropet: Returnera 500 Server Error
         stubFor(post(urlEqualTo("/chat/completions"))
                 .inScenario(scenario)
                 .whenScenarioStateIs(STARTED)
                 .willReturn(aResponse().withStatus(500))
                 .willSetStateTo("Failed once"));
 
+        // Andra anropet: Nu lyckas det!
         stubFor(post(urlEqualTo("/chat/completions"))
                 .inScenario(scenario)
                 .whenScenarioStateIs("Failed once")
                 .willReturn(aResponse()
+                        .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"choices\":[{\"message\":{\"content\":\"Nu funkade det!\"}}]}")));
 
         String response = chatService.processChat("pirate", "Hej", "retry-session");
         assertTrue(response.contains("Nu funkade det!"));
 
+        // Verifiera att Wiremock faktiskt tog emot exakt 2 anrop (ett som misslyckades och ett som lyckades)
         verify(2, postRequestedFor(urlEqualTo("/chat/completions")));
     }
 }

@@ -49,7 +49,6 @@ function App() {
         setLoading(true);
 
         try {
-            // FIX (byt till backticks):
             const response = await fetch (`${import.meta.env.VITE_API_URL}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -60,12 +59,32 @@ function App() {
                 }),
             });
 
+            // Om backenden svarar med fel (t.ex. 4xx eller 5xx)
+            if (!response.ok) {
+                const errorData = await response.json();
+                let friendlyMessage = "Oj, något gick snett. Försök igen!";
+
+                // Matcha mot våra strukturerade felkoder från GlobalExceptionHandler
+                if (errorData.errorCode === "RATE_LIMIT_EXCEEDED") {
+                    friendlyMessage = "Lugn i stormen! Du skickar meddelanden lite för snabbt. Vänta ett ögonblick innan nästa försök. 🤠";
+                } else if (errorData.errorCode === "EXTERNAL_SERVER_ERROR") {
+                    friendlyMessage = "Hjärnan bakom FunnyAI (OpenRouter) verkar ha tillfällig idétorka och är överbelastad. Försök igen snart! 🤯";
+                } else if (errorData.errorCode === "NETWORK_TIMEOUT") {
+                    friendlyMessage = "Anslutningen till AI-tjänsten tog för lång tid. Kontrollera nätverket och testa igen. 🌀";
+                } else if (errorData.message) {
+                    friendlyMessage = `Fel: ${errorData.message}`;
+                }
+
+                setMessages(prev => [...prev, { role: 'assistant', content: friendlyMessage }]);
+                return;
+            }
+
             const data = await response.json();
             const aiMessage = { role: 'assistant', content: data.reply };
             setMessages(prev => [...prev, aiMessage]);
         } catch (error) {
             console.error("Fel vid anrop:", error);
-            setMessages(prev => [...prev, { role: 'assistant', content: "Hoppsan! Kunde inte nå servern." }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: "Hoppsan! Kunde inte etablera kontakt med servern. Kontrollera att din backend är igång." }]);
         } finally {
             setLoading(false);
         }
@@ -96,7 +115,6 @@ function App() {
                 </header>
 
                 <div className="message-list">
-                    {/* ... din existerande meddelande-logik ... */}
                     {messages.length === 0 && (
                         <div className="empty-state">
                             <Bot size={48} />
@@ -136,7 +154,7 @@ function App() {
                         </button>
                     </form>
                 </div>
-            </div> {/* HÄR STÄNGS CHAT-CONTAINER */}
+            </div>
 
             <a
                 href="https://github.com/johanbriger/ai-service"

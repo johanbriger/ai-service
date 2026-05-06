@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
 @Configuration
 public class RestClientConfig {
@@ -20,6 +22,32 @@ public class RestClientConfig {
                 .baseUrl(baseUrl)
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .defaultHeader("Content-Type", "application/json")
+                // Detektera och kasta HttpClientErrorException för alla 4xx-fel (t.ex. 429 Too Many Requests)
+                .defaultStatusHandler(
+                        statusCode -> statusCode.is4xxClientError(),
+                        (request, response) -> {
+                            throw HttpClientErrorException.create(
+                                    response.getStatusCode(),
+                                    response.getStatusText(),
+                                    response.getHeaders(),
+                                    response.getBody().readAllBytes(),
+                                    null
+                            );
+                        }
+                )
+                // Detektera och kasta HttpServerErrorException för alla 5xx-fel (t.ex. 503 Service Unavailable)
+                .defaultStatusHandler(
+                        statusCode -> statusCode.is5xxServerError(),
+                        (request, response) -> {
+                            throw HttpServerErrorException.create(
+                                    response.getStatusCode(),
+                                    response.getStatusText(),
+                                    response.getHeaders(),
+                                    response.getBody().readAllBytes(),
+                                    null
+                            );
+                        }
+                )
                 .build();
     }
 }
