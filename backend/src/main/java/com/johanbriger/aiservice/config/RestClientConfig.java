@@ -22,7 +22,6 @@ public class RestClientConfig {
                 .baseUrl(baseUrl)
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .defaultHeader("Content-Type", "application/json")
-                // Detektera och kasta HttpClientErrorException för alla 4xx-fel (t.ex. 429 Too Many Requests)
                 .defaultStatusHandler(
                         statusCode -> statusCode.is4xxClientError(),
                         (request, response) -> {
@@ -35,7 +34,7 @@ public class RestClientConfig {
                             );
                         }
                 )
-                // Detektera och kasta HttpServerErrorException för alla 5xx-fel (t.ex. 503 Service Unavailable)
+
                 .defaultStatusHandler(
                         statusCode -> statusCode.is5xxServerError(),
                         (request, response) -> {

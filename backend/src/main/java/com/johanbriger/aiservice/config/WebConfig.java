@@ -9,10 +9,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // Tillåt alla endpoints (t.ex. /api/v1/chat)
+        registry.addMapping("/**") // Tillåt alla endpoints
                 .allowedOrigins(
                         "http://localhost:5173", // För lokal utveckling
-                        "https://funnyai-johanbriger.up.railway.app" // DIN FRONTEND-URL PÅ RAILWAY
+                        "https://funnyai-johanbriger.up.railway.app" // FRONTEND-URL PÅ RAILWAY
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")

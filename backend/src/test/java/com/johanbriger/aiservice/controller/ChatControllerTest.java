@@ -27,13 +27,13 @@ public class ChatControllerTest {
     public void testChatEndpointSuccess() throws Exception {
 
         when(chatService.processChat(anyString(), anyString(), anyString()))
-                .thenReturn("Arrr, hej på dig!");
+                .thenReturn("Hej på dig!");
 
 
         mockMvc.perform(post("/api/v1/chat")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"personality\":\"pirate\", \"message\":\"Hej\", \"sessionId\":\"123\"}"))
+                        .content("{\"personality\":\"helper\", \"message\":\"Hej\", \"sessionId\":\"123\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.reply").value("Arrr, hej på dig!"));
+                .andExpect(jsonPath("$.reply").value("Hej på dig!"));
     }
 }

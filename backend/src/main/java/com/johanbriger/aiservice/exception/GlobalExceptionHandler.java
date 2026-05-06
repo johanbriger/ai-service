@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, status);
     }
 
-    // 2. Hantera serverfel från OpenRouter efter att alla retries i backenden har misslyckats
+    // 2. Hantera serverfel från OpenRouter efter att alla retries i backend har misslyckats
     @ExceptionHandler(HttpServerErrorException.class)
     public ResponseEntity<ErrorResponse> handleHttpServerError(HttpServerErrorException ex) {
         HttpStatus status = (HttpStatus) ex.getStatusCode();

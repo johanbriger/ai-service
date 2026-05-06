@@ -27,7 +27,7 @@ import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
-@EnableRetry // SÄKERSTÄLL: Att Spring Retry är aktivt under våra integrationstester!
+@EnableRetry // Spring Retry är aktivt under våra integrationstester.
 public class ChatServiceIntegrationTest {
 
     @RegisterExtension

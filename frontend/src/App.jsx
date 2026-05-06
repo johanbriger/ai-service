@@ -59,12 +59,11 @@ function App() {
                 }),
             });
 
-            // Om backenden svarar med fel (t.ex. 4xx eller 5xx)
             if (!response.ok) {
                 const errorData = await response.json();
                 let friendlyMessage = "Oj, något gick snett. Försök igen!";
 
-                // Matcha mot våra strukturerade felkoder från GlobalExceptionHandler
+                // Felkoder från GlobalExceptionHandler
                 if (errorData.errorCode === "RATE_LIMIT_EXCEEDED") {
                     friendlyMessage = "Lugn i stormen! Du skickar meddelanden lite för snabbt. Vänta ett ögonblick innan nästa försök. 🤠";
                 } else if (errorData.errorCode === "EXTERNAL_SERVER_ERROR") {
