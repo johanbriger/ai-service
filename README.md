@@ -8,7 +8,7 @@ En komplett fullstack-applikation som erbjuder en interaktiv chattupplevelse med
 
 Applikationen är fullt driftsatt i molnet och redo att testas direkt i din webbläsare:
 
-* **Testa appen här:** [Klicka här för att öppna FunnyAI]([https://din-frontend-länk-på-railway.app](https://funnyai-johanbriger.up.railway.app/))
+* **Testa appen här:** [Klicka här för att öppna FunnyAI](https://funnyai-johanbriger.up.railway.app)
 
 *(Om du vill köra projektet lokalt på din egen maskin, följ instruktionerna för "Lokal utveckling" längre ner).*
 
